@@ -1,6 +1,6 @@
 {
-    "name": "gedmo/doctrine-extensions",
-    "description": "Doctrine behavioral extensions",
+    "name": "depa-international/doctrine-extensions",
+    "description": "Doctrine behavioral extensions for depa",
     "license": "MIT",
     "type": "library",
     "keywords": [
@@ -22,16 +22,8 @@
     ],
     "authors": [
         {
-            "name": "Gediminas Morkevicius",
-            "email": "gediminas.morkevicius@gmail.com"
-        },
-        {
-            "name": "Gustavo Falco",
-            "email": "comfortablynumb84@gmail.com"
-        },
-        {
-            "name": "David Buchmann",
-            "email": "david@liip.ch"
+            "name": "FELIX Jonathan",
+            "email": "felixjonathan111@gmail.com"
         }
     ],
     "homepage": "http://gediminasm.org/",
