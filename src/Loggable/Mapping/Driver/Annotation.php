@@ -95,8 +95,6 @@ class Annotation extends AbstractAnnotationDriver
                 throw new InvalidMappingException("Class must be annotated with Loggable annotation in order to track versioned fields in class - {$meta->getName()}");
             }
         }
-
-        return $config;
     }
 
     /**
@@ -110,8 +108,6 @@ class Annotation extends AbstractAnnotationDriver
     }
 
     /**
-     * @param array<string, mixed> $config
-     *
      * @return bool
      */
     protected function isClassAnnotationInValid(ClassMetadata $meta, array &$config)
@@ -121,8 +117,6 @@ class Annotation extends AbstractAnnotationDriver
 
     /**
      * Searches properties of embedded object for versioned fields
-     *
-     * @param array<string, mixed> $config
      */
     private function inspectEmbeddedForVersioned(string $field, array &$config, \Doctrine\ORM\Mapping\ClassMetadata $meta): void
     {

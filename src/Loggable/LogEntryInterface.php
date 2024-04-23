@@ -83,16 +83,28 @@ interface LogEntryInterface
     public function getObjectId();
 
     /**
-     * @param array<string, mixed> $data
+     * @param array<string, mixed> $dataBefore
      *
      * @return void
      */
-    public function setData(array $data);
+    public function setDataBefore(array $dataBefore);
 
     /**
      * @return array<string, mixed>|null
      */
-    public function getData();
+    public function getDataBefore();
+
+        /**
+     * @param array<string, mixed> $dataBefore
+     *
+     * @return void
+     */
+    public function setDataAfter(array $dataAfter);
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    public function getDataAfter();
 
     /**
      * @return void
@@ -103,4 +115,24 @@ interface LogEntryInterface
      * @return int|null
      */
     public function getVersion();
+
+        /**
+     * @return void
+     */
+    public function setPreviousPath(string $previousPath);
+
+    /**
+     * @return int|null
+     */
+    public function getPreviousPath();
+
+            /**
+     * @return void
+     */
+    public function setLibelle(string $libelle);
+
+    /**
+     * @return string|null
+     */
+    public function getLibelle();
 }

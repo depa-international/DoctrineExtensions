@@ -10,11 +10,8 @@
 namespace Gedmo\Loggable;
 
 use Doctrine\Common\EventArgs;
-use Doctrine\ORM\Mapping\ClassMetadata as ORMClassMetadata;
-use Doctrine\Persistence\Event\LifecycleEventArgs;
+use Doctrine\ORM\Mapping\ClassMetadata;
 use Doctrine\Persistence\Event\LoadClassMetadataEventArgs;
-use Doctrine\Persistence\Event\ManagerEventArgs;
-use Doctrine\Persistence\Mapping\ClassMetadata;
 use Doctrine\Persistence\ObjectManager;
 use Gedmo\Exception\InvalidArgumentException;
 use Gedmo\Loggable\Entity\LogEntry;
@@ -129,8 +126,6 @@ class LoggableListener extends MappedEventSubscriber
      *
      * @param LoadClassMetadataEventArgs $eventArgs
      *
-     * @phpstan-param LoadClassMetadataEventArgs<ClassMetadata<object>, ObjectManager> $eventArgs
-     *
      * @return void
      */
     public function loadClassMetadata(EventArgs $eventArgs)
@@ -141,10 +136,6 @@ class LoggableListener extends MappedEventSubscriber
     /**
      * Checks for inserted object to update its logEntry
      * foreign key
-     *
-     * @param LifecycleEventArgs $args
-     *
-     * @phpstan-param LifecycleEventArgs<ObjectManager> $args
      *
      * @return void
      */
@@ -178,7 +169,7 @@ class LoggableListener extends MappedEventSubscriber
                 $oldData = $data = $logEntry->getData();
                 $data[$props['field']] = $identifiers;
 
-                $logEntry->setData($data);
+                $logEntry->setDataAfter($data);
 
                 $uow->scheduleExtraUpdate($logEntry, [
                     'data' => [$oldData, $data],
@@ -192,10 +183,6 @@ class LoggableListener extends MappedEventSubscriber
     /**
      * Looks for loggable objects being inserted or updated
      * for further processing
-     *
-     * @param ManagerEventArgs $eventArgs
-     *
-     * @phpstan-param ManagerEventArgs<ObjectManager> $eventArgs
      *
      * @return void
      */
@@ -220,11 +207,9 @@ class LoggableListener extends MappedEventSubscriber
      * Get the LogEntry class
      *
      * @param string $class
-     *
      * @phpstan-param class-string $class
      *
      * @return string
-     *
      * @phpstan-return class-string<LogEntryInterface<T>>
      */
     protected function getLogEntryClass(LoggableAdapter $ea, $class)
@@ -272,7 +257,7 @@ class LoggableListener extends MappedEventSubscriber
         $meta = $wrapped->getMetadata();
         $config = $this->getConfiguration($om, $meta->getName());
         $uow = $om->getUnitOfWork();
-        $newValues = [];
+        $dataAfter = [];
 
         foreach ($ea->getObjectChangeSet($uow, $object) as $field => $changes) {
             if (empty($config['versioned']) || !in_array($field, $config['versioned'], true)) {
@@ -294,11 +279,75 @@ class LoggableListener extends MappedEventSubscriber
                     }
                 }
             }
-            $newValues[$field] = $value;
+            $dataAfter[$field] = $value;
         }
 
-        return $newValues;
+        return $dataAfter;
     }
+
+    protected function getObjectOldData($ea, $object)
+    {
+        $om = $ea->getObjectManager();
+        $wrapped = AbstractWrapper::wrap($object, $om);
+        $meta = $wrapped->getMetadata();
+        $config = $this->getConfiguration($om, $meta->getName());
+
+        $oldValues = [];
+
+        // Obtenir tous les champs de l'objet
+        $fieldNames = $meta->getFieldNames();
+
+        // Parcourir les champs pour obtenir les valeurs non associatives
+        foreach ($fieldNames as $field) {
+            if (!$meta->isSingleValuedAssociation($field) && !$meta->isCollectionValuedAssociation($field)) {
+                $value = $wrapped->getPropertyValue($field); // Récupérer la valeur du champ
+                $oldValues[$field] = $value; // Ajouter au tableau des anciennes valeurs
+            }
+        }
+
+        return $oldValues;
+    }
+
+
+    protected function getObjectOldDataWithNewValue($ea, $object, $logEntry, $dataAfter)
+    {
+        $om = $ea->getObjectManager();
+        $wrapped = AbstractWrapper::wrap($object, $om);
+        $meta = $wrapped->getMetadata();
+        $config = $this->getConfiguration($om, $meta->getName());
+        $uow = $om->getUnitOfWork();
+        $oldValues = [];
+
+        // Obtenir le change set de l'objet
+        $changeSet = $ea->getObjectChangeSet($uow, $object);
+
+        // Parcourir les champs du newValues pour obtenir les anciennes valeurs correspondantes
+        foreach (array_keys($dataAfter) as $field) {
+            // Vérifier si le champ est versionné et fait partie du change set
+            if (!isset($changeSet[$field]) || !in_array($field, $config['versioned'], true)) {
+                continue;
+            }
+
+            // Récupérer la valeur précédente à partir du change set
+            $value = $changeSet[$field][0];
+
+            // Si le champ est une association, gérer de manière appropriée
+            if ($meta->isSingleValuedAssociation($field) && $value) {
+                if ($wrapped->isEmbeddedAssociation($field)) {
+                    // Si l'association est intégrée, récupérer ses anciennes données
+                    $value = $this->getObjectOldData($ea, $value, $logEntry);
+                } else {
+                    $wrappedAssoc = AbstractWrapper::wrap($value, $om);
+                    $value = $wrappedAssoc->getIdentifier(false);
+                }
+            }
+
+            $oldValues[$field] = $value; // Ajouter au tableau des anciennes valeurs
+        }
+
+        return $oldValues;
+    }
+
 
     /**
      * Create a new Log instance
@@ -327,7 +376,7 @@ class LoggableListener extends MappedEventSubscriber
         if ($config = $this->getConfiguration($om, $meta->getName())) {
             $logEntryClass = $this->getLogEntryClass($ea, $meta->getName());
             $logEntryMeta = $om->getClassMetadata($logEntryClass);
-            /** @var LogEntryInterface<T> $logEntry */
+            /** @var LogEntryInterface $logEntry */
             $logEntry = $logEntryMeta->newInstance();
 
             $logEntry->setAction($action);
@@ -337,18 +386,25 @@ class LoggableListener extends MappedEventSubscriber
 
             // check for the availability of the primary key
             $uow = $om->getUnitOfWork();
-            if (LogEntryInterface::ACTION_CREATE === $action && ($ea->isPostInsertGenerator($meta) || ($meta instanceof ORMClassMetadata && $meta->isIdentifierComposite))) {
+            if (LogEntryInterface::ACTION_CREATE === $action && ($ea->isPostInsertGenerator($meta) || ($meta instanceof ClassMetadata && $meta->isIdentifierComposite))) {
                 $this->pendingLogEntryInserts[spl_object_id($object)] = $logEntry;
             } else {
                 $logEntry->setObjectId($wrapped->getIdentifier(false, true));
             }
-            $newValues = [];
+            $dataAfter = [];
             if (LogEntryInterface::ACTION_REMOVE !== $action && isset($config['versioned'])) {
-                $newValues = $this->getObjectChangeSetData($ea, $object, $logEntry);
-                $logEntry->setData($newValues);
+                $dataAfter = $this->getObjectChangeSetData($ea, $object, $logEntry);
+                $logEntry->setDataAfter($dataAfter);
+                if (LogEntryInterface::ACTION_CREATE !== $action) {
+                    $dataBefore = $this->getObjectOldDataWithNewValue($ea, $object, $logEntry, $dataAfter);
+                    $logEntry->setDataBefore($dataBefore);
+                }
+            } else {
+                $dataBefore = $this->getObjectOldData($ea, $object);
+                $logEntry->setDataBefore($dataBefore);
             }
 
-            if (LogEntryInterface::ACTION_UPDATE === $action && [] === $newValues) {
+            if (LogEntryInterface::ACTION_UPDATE === $action && [] === $dataAfter) {
                 return null;
             }
 
@@ -360,7 +416,12 @@ class LoggableListener extends MappedEventSubscriber
                     $version = 1;
                 }
             }
+
             $logEntry->setVersion($version);
+            if ($object->getPreviousPath())
+                $logEntry->setpreviousPath($object->getPreviousPath());
+            if ($object->getHistoryLibelle())
+                $logEntry->setLibelle($object->getHistoryLibelle());
 
             $this->prePersistLogEntry($logEntry, $object);
 

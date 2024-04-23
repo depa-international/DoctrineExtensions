@@ -18,7 +18,7 @@ use Gedmo\Loggable\Loggable;
  * Gedmo\Loggable\Entity\LogEntry
  *
  * @ORM\Table(
- *     name="ext_log_entries",
+ *     name="D_Historique",
  *     options={"row_format": "DYNAMIC"},
  *     indexes={
  *         @ORM\Index(name="log_class_lookup_idx", columns={"object_class"}),
@@ -34,11 +34,13 @@ use Gedmo\Loggable\Loggable;
  * @phpstan-extends AbstractLogEntry<T>
  */
 #[ORM\Entity(repositoryClass: LogEntryRepository::class)]
-#[ORM\Table(name: 'ext_log_entries', options: ['row_format' => 'DYNAMIC'])]
+#[ORM\Table(name: 'D_Historique', options: ['row_format' => 'DYNAMIC'])]
 #[ORM\Index(name: 'log_class_lookup_idx', columns: ['object_class'])]
 #[ORM\Index(name: 'log_date_lookup_idx', columns: ['logged_at'])]
 #[ORM\Index(name: 'log_user_lookup_idx', columns: ['username'])]
 #[ORM\Index(name: 'log_version_lookup_idx', columns: ['object_id', 'object_class', 'version'])]
+#[ORM\Index(name: 'log_previousPath_lookup_idx', columns: ['previousPath'])]
+#[ORM\Index(name: 'log_libelle_lookup_idx', columns: ['libelle'])]
 class LogEntry extends AbstractLogEntry
 {
     /*

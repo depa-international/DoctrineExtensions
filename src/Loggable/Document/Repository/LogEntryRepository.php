@@ -9,6 +9,7 @@
 
 namespace Gedmo\Loggable\Document\Repository;
 
+use Doctrine\ODM\MongoDB\Iterator\Iterator;
 use Doctrine\ODM\MongoDB\Mapping\ClassMetadata;
 use Doctrine\ODM\MongoDB\Repository\DocumentRepository;
 use Gedmo\Exception\RuntimeException;
@@ -33,9 +34,9 @@ class LogEntryRepository extends DocumentRepository
     /**
      * Currently used loggable listener
      *
-     * @var LoggableListener<T>|null
+     * @var LoggableListener<T>
      */
-    private ?LoggableListener $listener = null;
+    private $listener;
 
     /**
      * Loads all log entries for the
@@ -58,8 +59,14 @@ class LogEntryRepository extends DocumentRepository
         $qb->field('objectId')->equals($objectId);
         $qb->field('objectClass')->equals($wrapped->getMetadata()->getName());
         $qb->sort('version', 'DESC');
+        $q = $qb->getQuery();
 
-        return $qb->getQuery()->getIterator()->toArray();
+        $result = $q->execute();
+        if ($result instanceof Iterator) {
+            $result = $result->toArray();
+        }
+
+        return $result;
     }
 
     /**
@@ -88,8 +95,12 @@ class LogEntryRepository extends DocumentRepository
         $qb->field('objectClass')->equals($objectMeta->getName());
         $qb->field('version')->lte((int) $version);
         $qb->sort('version', 'ASC');
+        $q = $qb->getQuery();
 
-        $logs = $qb->getQuery()->getIterator()->toArray();
+        $logs = $q->execute();
+        if ($logs instanceof Iterator) {
+            $logs = $logs->toArray();
+        }
 
         if ([] === $logs) {
             throw new UnexpectedValueException('Count not find any log entries under version: '.$version);
@@ -106,8 +117,7 @@ class LogEntryRepository extends DocumentRepository
     /**
      * Fills a documents versioned fields with data
      *
-     * @param object               $document
-     * @param array<string, mixed> $data
+     * @param object $document
      *
      * @return void
      *
@@ -163,8 +173,8 @@ class LogEntryRepository extends DocumentRepository
     private function getLoggableListener(): LoggableListener
     {
         if (null === $this->listener) {
-            foreach ($this->dm->getEventManager()->getAllListeners() as $listeners) {
-                foreach ($listeners as $listener) {
+            foreach ($this->dm->getEventManager()->getAllListeners() as $event => $listeners) {
+                foreach ($listeners as $hash => $listener) {
                     if ($listener instanceof LoggableListener) {
                         $this->listener = $listener;
 

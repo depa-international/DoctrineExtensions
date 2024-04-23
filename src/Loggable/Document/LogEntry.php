@@ -18,7 +18,6 @@ use Gedmo\Loggable\Loggable;
  * Gedmo\Loggable\Document\LogEntry
  *
  * @MongoODM\Document(repositoryClass="Gedmo\Loggable\Document\Repository\LogEntryRepository")
- *
  * @MongoODM\Index(keys={"objectId": "asc", "objectClass": "asc", "version": "asc"})
  * @MongoODM\Index(keys={"loggedAt": "asc"})
  * @MongoODM\Index(keys={"objectClass": "asc"})
@@ -33,6 +32,7 @@ use Gedmo\Loggable\Loggable;
 #[MongoODM\Index(keys: ['loggedAt' => 'asc'])]
 #[MongoODM\Index(keys: ['objectClass' => 'asc'])]
 #[MongoODM\Index(keys: ['username' => 'asc'])]
+#[MongoODM\Index(keys: ['previousPath' => 'asc'])]
 class LogEntry extends AbstractLogEntry
 {
     /*

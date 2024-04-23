@@ -91,6 +91,7 @@ abstract class AbstractLogEntry implements LogEntryInterface
      */
     #[MongoODM\Field(type: Type::STRING, nullable: true)]
     protected $username;
+    
 
     /**
      * Get id

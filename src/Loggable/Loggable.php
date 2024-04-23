@@ -10,7 +10,9 @@
 namespace Gedmo\Loggable;
 
 /**
- * Marker interface for objects which can be identified as loggable.
+ * This interface is not necessary but can be implemented for
+ * Domain Objects which in some cases needs to be identified as
+ * Loggable
  *
  * @author Gediminas Morkevicius <gediminas.morkevicius@gmail.com>
  */
@@ -19,14 +21,14 @@ interface Loggable
     // this interface is not necessary to implement
 
     /*
-     * @Gedmo\Loggable
-     * to mark the class as loggable use class annotation @Gedmo\Loggable
+     * @gedmo:Loggable
+     * to mark the class as loggable use class annotation @gedmo:Loggable
      * this object will contain now a history
      * available options:
      *         logEntryClass="My\LogEntryObject" (optional) defaultly will use internal object class
      * example:
      *
-     * @Gedmo\Loggable(logEntryClass="My\LogEntryObject")
+     * @gedmo:Loggable(logEntryClass="My\LogEntryObject")
      * class MyEntity
      */
 }

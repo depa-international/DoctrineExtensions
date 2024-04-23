@@ -29,11 +29,11 @@ abstract class AbstractLogEntry implements LogEntryInterface
      *
      * @ORM\Column(type="integer")
      * @ORM\Id
-     * @ORM\GeneratedValue
+     * @ORM\GeneratedValue(strategy="IDENTITY")
      */
     #[ORM\Column(type: Types::INTEGER)]
     #[ORM\Id]
-    #[ORM\GeneratedValue]
+    #[ORM\GeneratedValue(strategy: "IDENTITY")]
     protected $id;
 
     /**
@@ -81,20 +81,58 @@ abstract class AbstractLogEntry implements LogEntryInterface
     protected $version;
 
     /**
-     * @var array<string, mixed>|null
+     * @var array|null
      *
-     * @ORM\Column(type="array", nullable=true)
+     * @ORM\Column(name="dataBefore", type="array", nullable=true)
      */
-    #[ORM\Column(type: Types::ARRAY, nullable: true)]
-    protected $data;
+    #[ORM\Column(type: Types::ARRAY , nullable: true)]
+    protected $dataBefore;
+
+    /**
+     * @var array|null
+     *
+     * @ORM\Column(name="dataAfter",type="array", nullable=true)
+     */
+    #[ORM\Column(type: Types::ARRAY , nullable: true)]
+    protected $dataAfter;
+
 
     /**
      * @var string|null
      *
-     * @ORM\Column(length=191, nullable=true)
+     * @ORM\Column( length=191, nullable=true)
      */
     #[ORM\Column(length: 191, nullable: true)]
     protected $username;
+
+    /**
+     * @var string|null
+     *
+     * @ORM\Column(name="previousPath",length=191, nullable=true)
+     */
+
+    #[ORM\Column(length: 191, nullable: true)]
+    private $previousPath;
+
+    /**
+     * @var string|null
+     *
+     * @ORM\Column(name="libelle",length=191, nullable=true)
+     */
+
+     #[ORM\Column(length: 191, nullable: true)]
+     private $libelle;
+
+    // Implémentation des méthodes manquantes
+    public function setPreviousPath(string $previousPath): void
+    {
+        $this->previousPath = $previousPath;
+    }
+
+    public function getPreviousPath(): ?string
+    {
+        return $this->previousPath;
+    }
 
     /**
      * Get id
@@ -108,6 +146,8 @@ abstract class AbstractLogEntry implements LogEntryInterface
 
     /**
      * Get action
+     *
+     * @return string|null
      */
     public function getAction()
     {
@@ -116,6 +156,10 @@ abstract class AbstractLogEntry implements LogEntryInterface
 
     /**
      * Set action
+     *
+     * @param string $action
+     *
+     * @return void
      */
     public function setAction($action)
     {
@@ -124,6 +168,8 @@ abstract class AbstractLogEntry implements LogEntryInterface
 
     /**
      * Get object class
+     *
+     * @return string|null
      */
     public function getObjectClass()
     {
@@ -132,6 +178,10 @@ abstract class AbstractLogEntry implements LogEntryInterface
 
     /**
      * Set object class
+     *
+     * @param string $objectClass
+     *
+     * @return void
      */
     public function setObjectClass($objectClass)
     {
@@ -140,6 +190,8 @@ abstract class AbstractLogEntry implements LogEntryInterface
 
     /**
      * Get object id
+     *
+     * @return string|null
      */
     public function getObjectId()
     {
@@ -150,6 +202,8 @@ abstract class AbstractLogEntry implements LogEntryInterface
      * Set object id
      *
      * @param string $objectId
+     *
+     * @return void
      */
     public function setObjectId($objectId)
     {
@@ -158,6 +212,8 @@ abstract class AbstractLogEntry implements LogEntryInterface
 
     /**
      * Get username
+     *
+     * @return string|null
      */
     public function getUsername()
     {
@@ -168,6 +224,8 @@ abstract class AbstractLogEntry implements LogEntryInterface
      * Set username
      *
      * @param string $username
+     *
+     * @return void
      */
     public function setUsername($username)
     {
@@ -176,6 +234,8 @@ abstract class AbstractLogEntry implements LogEntryInterface
 
     /**
      * Get loggedAt
+     *
+     * @return \DateTime|null
      */
     public function getLoggedAt()
     {
@@ -184,6 +244,8 @@ abstract class AbstractLogEntry implements LogEntryInterface
 
     /**
      * Set loggedAt to "now"
+     *
+     * @return void
      */
     public function setLoggedAt()
     {
@@ -192,24 +254,55 @@ abstract class AbstractLogEntry implements LogEntryInterface
 
     /**
      * Get data
+     *
+     * @return array|null
      */
-    public function getData()
+    public function getDataBefore()
     {
-        return $this->data;
+        return $this->dataBefore;
     }
 
     /**
      * Set data
+     *
+     * @param array $dataBefore
+     *
+     * @return void
      */
-    public function setData($data)
+    public function setDataBefore($dataBefore)
     {
-        $this->data = $data;
+        $this->dataBefore = $dataBefore;
     }
+
+    /**
+     * Get data
+     *
+     * @return array|null
+     */
+    public function getDataAfter()
+    {
+        return $this->dataAfter;
+    }
+
+    /**
+     * Set data
+     *
+     * @param array $dataAfter
+     *
+     * @return void
+     */
+    public function setDataAfter($dataAfter)
+    {
+        $this->dataAfter = $dataAfter;
+    }
+
 
     /**
      * Set current version
      *
      * @param int $version
+     *
+     * @return void
      */
     public function setVersion($version)
     {
@@ -218,9 +311,36 @@ abstract class AbstractLogEntry implements LogEntryInterface
 
     /**
      * Get current version
+     *
+     * @return int|null
      */
     public function getVersion()
     {
         return $this->version;
+    }
+
+
+    
+    /**
+     * Get current libelle
+     *
+     * @return string|null
+     */
+    public function getLibelle()
+    {
+        return $this->libelle;
+    }
+
+    
+    /**
+     * Set current libelle
+     *
+     * @param string $libelle
+     *
+     * @return void
+     */
+    public function setLibelle($libelle)
+    {
+        $this->libelle = $libelle;
     }
 }
