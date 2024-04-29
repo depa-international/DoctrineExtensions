@@ -418,10 +418,26 @@ class LoggableListener extends MappedEventSubscriber
             }
 
             $logEntry->setVersion($version);
-            if ($object->getPreviousPath())
+            if (method_exists($object, 'getPreviousPath'))
                 $logEntry->setpreviousPath($object->getPreviousPath());
-            if ($object->getHistoryLibelle())
+            if (method_exists($object, 'getHistoryLibelle'))
                 $logEntry->setLibelle($object->getHistoryLibelle());
+            if (method_exists($object, 'getDataHistory')) {
+                // Obtenir les données historiques
+                $dataHistory = $object->getDataHistory();
+            
+                // Assurez-vous que $dataHistory est bien un tableau
+                if (is_array($dataHistory)) {
+                    if (LogEntryInterface::ACTION_REMOVE !== $action) {
+                        $logEntry->setDataAfter(array_merge($logEntry->getDataAfter(), $dataHistory));
+                    }
+            
+                    if (LogEntryInterface::ACTION_CREATE !== $action) {
+                        $logEntry->setDataBefore(array_merge($logEntry->getDataBefore(), $dataHistory));
+                    }
+                }
+            }
+                
 
             $this->prePersistLogEntry($logEntry, $object);
 
